@@ -33,13 +33,6 @@ jobs:
           dotnet build --configuration Release --output ./output
           popd
 
-      - name: Login to Azure
-        uses: azure/login@v1
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_6E5934CD7910494E989A86FEA2DF4C4F }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_16BA0D2E9BB842808A207C8D56EEF188 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_05831507134C440EBD7D9D44DAE9D079 }}
-
       - name: 'Run Azure Functions Action'
         uses: Azure/functions-action@v1
         id: fa
@@ -47,3 +40,4 @@ jobs:
           app-name: 'ContactFormWithAzure'
           slot-name: 'Production'
           package: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/output'
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
