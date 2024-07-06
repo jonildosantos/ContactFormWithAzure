@@ -1,52 +1,45 @@
-# Docs for the Azure Web Apps Deploy action: https://github.com/azure/functions-action
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
-name: Build and deploy dotnet core project to Azure Function App - ContactFormWithAzure
-
+name: Build and Deploy website with Azure Function
 on:
   push:
     branches:
       - main
-  workflow_dispatch:
-
 env:
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: '.' # set this to the path to your web app project, defaults to the repository root
-  DOTNET_VERSION: '6.0.x' # set this to the dotnet version to use
-
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: 'api'
+  DOTNET_VERSION: '6.0.x'
 jobs:
-  build-and-deploy:
+  deploy-website:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write #This is required for requesting the JWT
-
     steps:
-      - name: 'Checkout GitHub Action'
-        uses: actions/checkout@v4
-
-      - name: Setup DotNet ${{ env.DOTNET_VERSION }} Environment
+      - name: Check Out Repo
+        uses: actions/checkout@v2
+      - name: Deploy to Azure Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: 'upload'
+          app_location: ''
+          api_location: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+          output_location: ''
+  build-and-deploy-azure-function:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v2
+      - name: Setup DotNet
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - name: 'Resolve Project Dependencies Using Dotnet'
+      - name: Build Azure Function
         shell: bash
         run: |
           pushd './${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
           dotnet build --configuration Release --output ./output
           popd
-      
-      - name: Login to Azure
-        uses: azure/login@v1
-        with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_6E5934CD7910494E989A86FEA2DF4C4F }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_16BA0D2E9BB842808A207C8D56EEF188 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_05831507134C440EBD7D9D44DAE9D079 }}
-
-      - name: 'Run Azure Functions Action'
+      - name: Deploy Azure Function
         uses: Azure/functions-action@v1
-        id: fa
         with:
           app-name: 'ContactFormWithAzure'
           slot-name: 'Production'
           package: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}/output'
-          
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
